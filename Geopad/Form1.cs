@@ -50,7 +50,7 @@ namespace Geopad
         {
             foreach (var Pt in points) { e.Graphics.DrawEllipse(Pens.Blue, (float)Pt.Longitude, (float)Pt.Latitude, 10, 10); }
             foreach (var Ln in lines) { e.Graphics.DrawLine(Pens.Blue, (float)Ln.Item1.Longitude, (float)Ln.Item1.Latitude, (float)Ln.Item2.Longitude, (float)Ln.Item2.Latitude); }
-            foreach (var Po in polygons) { e.Graphics.DrawRectangle(Pens.Blue, new Rectangle((int)Po.Item1.Longitude, (int)Po.Item1.Latitude, (int)(Po.Item1.Longitude + Po.Item2.Longitude), (int)(Po.Item1.Latitude + Po.Item2.Latitude))); }
+            foreach (var Po in polygons) { e.Graphics.DrawRectangle(Pens.Blue, new Rectangle((int)Po.Item1.Longitude, (int)Po.Item1.Latitude, (int)(Po.Item2.Longitude - Po.Item1.Longitude), (int)(Po.Item2.Latitude - Po.Item1.Latitude))); }
 
             if (drawing)
             {
@@ -63,7 +63,7 @@ namespace Geopad
                         e.Graphics.DrawLine(Pens.Cyan, origin, end);
                         break;
                     case DrawMode.Polygon:
-                        e.Graphics.DrawRectangle(Pens.Cyan, new Rectangle(origin.X, origin.Y, origin.X + end.X, origin.Y + end.Y));
+                        e.Graphics.DrawRectangle(Pens.Cyan, new Rectangle(origin.X, origin.Y, end.X - origin.X, end.Y - origin.Y));
                         break;
                     default:
                         break;
@@ -77,6 +77,7 @@ namespace Geopad
             {
                 drawing = true;
                 origin = e.Location;
+                end = e.Location;
                 switch (DrawingMode)
                 {
                     case DrawMode.Line:
