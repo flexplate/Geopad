@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
+using System.Reflection;
 using System.Windows.Forms;
 
 namespace Geopad
@@ -35,6 +36,9 @@ namespace Geopad
             points = new List<GeoJSON.Net.Geometry.Position>();
             lines = new List<Tuple<GeoJSON.Net.Geometry.Position, GeoJSON.Net.Geometry.Position>>();
             polygons = new List<Tuple<GeoJSON.Net.Geometry.Position, GeoJSON.Net.Geometry.Position>>();
+
+            // Fix for panel flickering - from https://stackoverflow.com/a/15815254/6614025
+            typeof(Panel).InvokeMember("DoubleBuffered", BindingFlags.SetProperty | BindingFlags.Instance | BindingFlags.NonPublic, null, panel1, new object[] { true });
 
             panel1.MouseEnter += Panel1_MouseEnter;
             panel1.MouseLeave += Panel1_MouseLeave;
@@ -81,12 +85,23 @@ namespace Geopad
             if (pointerOverPanel)
             {
                 // Draw size tooltip
-                var TooltipLabel = string.Format("{0}, {1}", mouseLocation.X, mouseLocation.Y);
+                var TooltipLabel = string.Format("{0}, {1}", mouseLocation.X, -(mouseLocation.Y - panel1.Height));
                 var GenericFont = new Font(FontFamily.GenericSansSerif, 10);
                 SizeF LayoutSize = new SizeF(200.0F, 50.0F);
                 SizeF TextSize = e.Graphics.MeasureString(TooltipLabel, GenericFont, LayoutSize);
-                e.Graphics.DrawRectangle(Pens.Black, mouseLocation.X + 5, mouseLocation.Y + 5, TextSize.Width, TextSize.Height);
-                e.Graphics.DrawString(TooltipLabel, GenericFont, Brushes.Black, new Point(mouseLocation.X + 6, mouseLocation.Y + 6));
+                int OriginY = mouseLocation.Y + 5;
+                int OriginX = mouseLocation.X + 5;
+                if (TextSize.Height + OriginY > panel1.Height)
+                {
+                    OriginY = Convert.ToInt32(mouseLocation.Y - TextSize.Height - 5);
+                }
+                if (TextSize.Width + OriginX > Width)
+                {
+                    OriginX = Convert.ToInt32(mouseLocation.X - TextSize.Width - 5);
+                }
+                e.Graphics.DrawRectangle(Pens.Black, OriginX, OriginY, TextSize.Width, TextSize.Height);
+                var TooltipOrigin = new Point(OriginX+ 1, OriginY + 1);
+                e.Graphics.DrawString(TooltipLabel, GenericFont, Brushes.Black, TooltipOrigin);
             }
         }
 
@@ -135,7 +150,7 @@ namespace Geopad
                     lines.Add(new Tuple<GeoJSON.Net.Geometry.Position, GeoJSON.Net.Geometry.Position>(new GeoJSON.Net.Geometry.Position(origin.Y, origin.X), new GeoJSON.Net.Geometry.Position(end.Y, end.X)));
                     break;
                 case DrawMode.Polygon:
-                    polygons.Add(new Tuple<GeoJSON.Net.Geometry.Position, GeoJSON.Net.Geometry.Position>(new GeoJSON.Net.Geometry.Position(origin.Y, origin.X), new GeoJSON.Net.Geometry.Position(end.Y, end.X)));                    
+                    polygons.Add(new Tuple<GeoJSON.Net.Geometry.Position, GeoJSON.Net.Geometry.Position>(new GeoJSON.Net.Geometry.Position(origin.Y, origin.X), new GeoJSON.Net.Geometry.Position(end.Y, end.X)));
                     break;
                 default:
                     break;
@@ -163,23 +178,23 @@ namespace Geopad
             var Features = new List<Feature>();
             foreach (var CurrentPoint in points)
             {
-                var Geometry = new GeoJSON.Net.Geometry.Point(CurrentPoint);
+                var Geometry = new GeoJSON.Net.Geometry.Point(InvertPosition(CurrentPoint));
                 Features.Add(new Feature(Geometry));
             }
             foreach (var CurrentLine in lines)
             {
-                var Geometry = new GeoJSON.Net.Geometry.LineString(new List<GeoJSON.Net.Geometry.Position> { CurrentLine.Item1, CurrentLine.Item2 });
+                var Geometry = new GeoJSON.Net.Geometry.LineString(new List<GeoJSON.Net.Geometry.IPosition> { InvertPosition(CurrentLine.Item1), InvertPosition(CurrentLine.Item2) });
                 Features.Add(new Feature(Geometry));
             }
             foreach (var CurrentPoly in polygons)
             {
                 var Poly = new List<List<List<double>>> {
                     new List<List<double>> {
-                        new List<double> { CurrentPoly.Item1.Latitude, CurrentPoly.Item1.Longitude },
-                        new List<double> { CurrentPoly.Item1.Latitude, CurrentPoly.Item2.Longitude },
-                        new List<double> { CurrentPoly.Item2.Latitude, CurrentPoly.Item2.Longitude },
-                        new List<double> { CurrentPoly.Item2.Latitude, CurrentPoly.Item1.Longitude },
-                        new List<double> { CurrentPoly.Item1.Latitude, CurrentPoly.Item1.Longitude },
+                        new List<double> { InvertPosition(CurrentPoly.Item1).Latitude, InvertPosition(CurrentPoly.Item1).Longitude },
+                        new List<double> { InvertPosition(CurrentPoly.Item1).Latitude, InvertPosition(CurrentPoly.Item2).Longitude },
+                        new List<double> { InvertPosition(CurrentPoly.Item2).Latitude, InvertPosition(CurrentPoly.Item2).Longitude },
+                        new List<double> { InvertPosition(CurrentPoly.Item2).Latitude, InvertPosition(CurrentPoly.Item1).Longitude },
+                        new List<double> { InvertPosition(CurrentPoly.Item1).Latitude, InvertPosition(CurrentPoly.Item1).Longitude },
                     }
                 };
                 var Geometry = new GeoJSON.Net.Geometry.Polygon(Poly);
@@ -206,6 +221,11 @@ namespace Geopad
                 }
             }
 
+        }
+
+        private GeoJSON.Net.Geometry.IPosition InvertPosition(GeoJSON.Net.Geometry.IPosition currentPoint)
+        {
+            return new GeoJSON.Net.Geometry.Position(-(currentPoint.Latitude - panel1.Height), currentPoint.Longitude, currentPoint.Altitude ?? null);
         }
     }
 }

@@ -80,6 +80,7 @@
             // 
             // panel1
             // 
+            this.panel1.BackgroundImage = global::Geopad.Properties.Resources.grid_20px;
             this.panel1.Cursor = System.Windows.Forms.Cursors.Cross;
             this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel1.Location = new System.Drawing.Point(0, 24);
@@ -94,6 +95,7 @@
             this.ClientSize = new System.Drawing.Size(903, 576);
             this.Controls.Add(this.panel1);
             this.Controls.Add(this.menuStrip1);
+            this.Icon = global::Geopad.Properties.Resources.ProgramIcon;
             this.MainMenuStrip = this.menuStrip1;
             this.Name = "Form1";
             this.Text = "GeoPad";
@@ -102,7 +104,6 @@
             this.ResumeLayout(false);
             this.PerformLayout();
 
-            this.Icon = Geopad.Properties.Resources.ProgramIcon;
         }
 
         #endregion
