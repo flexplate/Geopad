@@ -102,9 +102,11 @@
             this.ResumeLayout(false);
             this.PerformLayout();
 
+            this.Icon = Geopad.Properties.Resources.ProgramIcon;
         }
 
         #endregion
+
 
         private System.Windows.Forms.MenuStrip menuStrip1;
         private System.Windows.Forms.ToolStripMenuItem pointToolStripMenuItem;

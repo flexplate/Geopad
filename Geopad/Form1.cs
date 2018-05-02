@@ -2,13 +2,8 @@
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace Geopad
@@ -21,7 +16,8 @@ namespace Geopad
         private List<GeoJSON.Net.Geometry.Position> points;
         private List<Tuple<GeoJSON.Net.Geometry.Position, GeoJSON.Net.Geometry.Position>> lines;
         private List<Tuple<GeoJSON.Net.Geometry.Position, GeoJSON.Net.Geometry.Position>> polygons;
-
+        private bool pointerOverPanel;
+        private Point mouseLocation;
 
         public enum DrawMode
         {
@@ -40,17 +36,29 @@ namespace Geopad
             lines = new List<Tuple<GeoJSON.Net.Geometry.Position, GeoJSON.Net.Geometry.Position>>();
             polygons = new List<Tuple<GeoJSON.Net.Geometry.Position, GeoJSON.Net.Geometry.Position>>();
 
+            panel1.MouseEnter += Panel1_MouseEnter;
+            panel1.MouseLeave += Panel1_MouseLeave;
             panel1.MouseDown += Panel1_MouseDown;
             panel1.MouseMove += Panel1_MouseMove;
             panel1.MouseUp += Panel1_MouseUp;
             panel1.Paint += Panel1_Paint;
         }
 
+        private void Panel1_MouseLeave(object sender, EventArgs e)
+        {
+            pointerOverPanel = false;
+        }
+
+        private void Panel1_MouseEnter(object sender, EventArgs e)
+        {
+            pointerOverPanel = true;
+        }
+
         private void Panel1_Paint(object sender, PaintEventArgs e)
         {
             foreach (var Pt in points) { e.Graphics.DrawEllipse(Pens.Blue, (float)Pt.Longitude, (float)Pt.Latitude, 10, 10); }
             foreach (var Ln in lines) { e.Graphics.DrawLine(Pens.Blue, (float)Ln.Item1.Longitude, (float)Ln.Item1.Latitude, (float)Ln.Item2.Longitude, (float)Ln.Item2.Latitude); }
-            foreach (var Po in polygons) { e.Graphics.DrawRectangle(Pens.Blue, new Rectangle((int)Po.Item1.Longitude, (int)Po.Item1.Latitude, (int)(Po.Item2.Longitude - Po.Item1.Longitude), (int)(Po.Item2.Latitude - Po.Item1.Latitude))); }
+            foreach (var Po in polygons) { e.Graphics.DrawRectangle(Pens.Blue, (int)Po.Item1.Longitude, (int)Po.Item1.Latitude, (int)(Po.Item2.Longitude - Po.Item1.Longitude), (int)(Po.Item2.Latitude - Po.Item1.Latitude)); }
 
             if (drawing)
             {
@@ -63,11 +71,22 @@ namespace Geopad
                         e.Graphics.DrawLine(Pens.Cyan, origin, end);
                         break;
                     case DrawMode.Polygon:
-                        e.Graphics.DrawRectangle(Pens.Cyan, new Rectangle(origin.X, origin.Y, end.X - origin.X, end.Y - origin.Y));
+                        e.Graphics.DrawRectangle(Pens.Cyan, origin.X, origin.Y, end.X - origin.X, end.Y - origin.Y);
                         break;
                     default:
                         break;
                 }
+            }
+
+            if (pointerOverPanel)
+            {
+                // Draw size tooltip
+                var TooltipLabel = string.Format("{0}, {1}", mouseLocation.X, mouseLocation.Y);
+                var GenericFont = new Font(FontFamily.GenericSansSerif, 10);
+                SizeF LayoutSize = new SizeF(200.0F, 50.0F);
+                SizeF TextSize = e.Graphics.MeasureString(TooltipLabel, GenericFont, LayoutSize);
+                e.Graphics.DrawRectangle(Pens.Black, mouseLocation.X + 5, mouseLocation.Y + 5, TextSize.Width, TextSize.Height);
+                e.Graphics.DrawString(TooltipLabel, GenericFont, Brushes.Black, new Point(mouseLocation.X + 6, mouseLocation.Y + 6));
             }
         }
 
@@ -93,12 +112,15 @@ namespace Geopad
 
         private void Panel1_MouseMove(object sender, MouseEventArgs e)
         {
+            mouseLocation = e.Location;
             if (drawing)
             {
                 end = e.Location;
-            panel1.Invalidate();
             }
+            panel1.Invalidate();
         }
+
+
 
         private void Panel1_MouseUp(object sender, MouseEventArgs e)
         {
@@ -113,7 +135,7 @@ namespace Geopad
                     lines.Add(new Tuple<GeoJSON.Net.Geometry.Position, GeoJSON.Net.Geometry.Position>(new GeoJSON.Net.Geometry.Position(origin.Y, origin.X), new GeoJSON.Net.Geometry.Position(end.Y, end.X)));
                     break;
                 case DrawMode.Polygon:
-                    polygons.Add(new Tuple<GeoJSON.Net.Geometry.Position, GeoJSON.Net.Geometry.Position>(new GeoJSON.Net.Geometry.Position(origin.Y, origin.X), new GeoJSON.Net.Geometry.Position(end.Y, end.X)));
+                    polygons.Add(new Tuple<GeoJSON.Net.Geometry.Position, GeoJSON.Net.Geometry.Position>(new GeoJSON.Net.Geometry.Position(origin.Y, origin.X), new GeoJSON.Net.Geometry.Position(end.Y, end.X)));                    
                     break;
                 default:
                     break;
@@ -151,21 +173,16 @@ namespace Geopad
             }
             foreach (var CurrentPoly in polygons)
             {
-                var Coordinates = new List<GeoJSON.Net.Geometry.Position> {
-                    CurrentPoly.Item1,
-                    new GeoJSON.Net.Geometry.Position(CurrentPoly.Item1.Latitude, CurrentPoly.Item2.Longitude),
-                    CurrentPoly.Item2,
-                    new GeoJSON.Net.Geometry.Position(CurrentPoly.Item2.Latitude, CurrentPoly.Item1.Longitude),
-                    CurrentPoly.Item1
+                var Poly = new List<List<List<double>>> {
+                    new List<List<double>> {
+                        new List<double> { CurrentPoly.Item1.Latitude, CurrentPoly.Item1.Longitude },
+                        new List<double> { CurrentPoly.Item1.Latitude, CurrentPoly.Item2.Longitude },
+                        new List<double> { CurrentPoly.Item2.Latitude, CurrentPoly.Item2.Longitude },
+                        new List<double> { CurrentPoly.Item2.Latitude, CurrentPoly.Item1.Longitude },
+                        new List<double> { CurrentPoly.Item1.Latitude, CurrentPoly.Item1.Longitude },
+                    }
                 };
-                var Lines = new List<GeoJSON.Net.Geometry.LineString>();
-                for (int i = 0; i < Coordinates.Count-1; i++)
-                {
-                    Lines.Add(new GeoJSON.Net.Geometry.LineString(new List<GeoJSON.Net.Geometry.Position> { Coordinates[i], Coordinates[i + 1] }));
-                }
-                // add final line from last to first
-                Lines.Add(new GeoJSON.Net.Geometry.LineString(new List<GeoJSON.Net.Geometry.Position> { Coordinates[Lines.Count - 1], Coordinates[0] }));
-                var Geometry = new GeoJSON.Net.Geometry.Polygon(Lines);
+                var Geometry = new GeoJSON.Net.Geometry.Polygon(Poly);
             }
 
             var FeatureCol = new FeatureCollection(Features);
@@ -183,7 +200,7 @@ namespace Geopad
                     {
                         Writer.Write(Json);
                         Writer.Flush();
-                    }     
+                    }
                     Stream.Close();
                 }
             }
