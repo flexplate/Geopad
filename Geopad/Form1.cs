@@ -183,6 +183,7 @@ namespace Geopad
                     }
                 };
                 var Geometry = new GeoJSON.Net.Geometry.Polygon(Poly);
+                Features.Add(new Feature(Geometry));
             }
 
             var FeatureCol = new FeatureCollection(Features);
