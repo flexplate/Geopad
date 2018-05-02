@@ -189,7 +189,7 @@ namespace Geopad
             var FeatureCol = new FeatureCollection(Features);
 
             var SaveDialog = new SaveFileDialog();
-            SaveDialog.Filter = "GeoJSON Files (*.json)|.json";
+            SaveDialog.Filter = "GeoJSON Files (*.json)|*.json";
             var Result = SaveDialog.ShowDialog();
             if (Result == DialogResult.OK)
             {
