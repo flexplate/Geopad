@@ -60,7 +60,12 @@ namespace Geopad
 
         private void Panel1_Paint(object sender, PaintEventArgs e)
         {
-            foreach (var Pt in points) { e.Graphics.DrawEllipse(Pens.Blue, (float)Pt.Longitude, (float)Pt.Latitude, 10, 10); }
+            foreach (var Pt in points)
+            {
+                e.Graphics.DrawLine(Pens.Blue, (float)Pt.Longitude - 5, (float)Pt.Latitude, (float)Pt.Longitude + 5, (float)Pt.Latitude);
+                e.Graphics.DrawLine(Pens.Blue, (float)Pt.Longitude, (float)Pt.Latitude - 5, (float)Pt.Longitude, (float)Pt.Latitude + 5);
+                e.Graphics.DrawEllipse(Pens.Blue, (float)Pt.Longitude-5, (float)Pt.Latitude-5, 10, 10);
+            }
             foreach (var Ln in lines) { e.Graphics.DrawLine(Pens.Blue, (float)Ln.Item1.Longitude, (float)Ln.Item1.Latitude, (float)Ln.Item2.Longitude, (float)Ln.Item2.Latitude); }
             foreach (var Po in polygons) { e.Graphics.DrawRectangle(Pens.Blue, (int)Po.Item1.Longitude, (int)Po.Item1.Latitude, (int)(Po.Item2.Longitude - Po.Item1.Longitude), (int)(Po.Item2.Latitude - Po.Item1.Latitude)); }
 
@@ -100,7 +105,7 @@ namespace Geopad
                     OriginX = Convert.ToInt32(mouseLocation.X - TextSize.Width - 5);
                 }
                 e.Graphics.DrawRectangle(Pens.Black, OriginX, OriginY, TextSize.Width, TextSize.Height);
-                var TooltipOrigin = new Point(OriginX+ 1, OriginY + 1);
+                var TooltipOrigin = new Point(OriginX + 1, OriginY + 1);
                 e.Graphics.DrawString(TooltipLabel, GenericFont, Brushes.Black, TooltipOrigin);
             }
         }
