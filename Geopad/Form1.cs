@@ -149,13 +149,13 @@ namespace Geopad
             switch (DrawingMode)
             {
                 case DrawMode.Point:
-                    points.Add(new GeoJSON.Net.Geometry.Position(end.Y, end.X));
+                    points.Add(new GeoJSON.Net.Geometry.Position(end.X, end.Y));
                     break;
                 case DrawMode.Line:
-                    lines.Add(new Tuple<GeoJSON.Net.Geometry.Position, GeoJSON.Net.Geometry.Position>(new GeoJSON.Net.Geometry.Position(origin.Y, origin.X), new GeoJSON.Net.Geometry.Position(end.Y, end.X)));
+                    lines.Add(new Tuple<GeoJSON.Net.Geometry.Position, GeoJSON.Net.Geometry.Position>(new GeoJSON.Net.Geometry.Position(origin.X, origin.Y), new GeoJSON.Net.Geometry.Position(end.X, end.Y)));
                     break;
                 case DrawMode.Polygon:
-                    polygons.Add(new Tuple<GeoJSON.Net.Geometry.Position, GeoJSON.Net.Geometry.Position>(new GeoJSON.Net.Geometry.Position(origin.Y, origin.X), new GeoJSON.Net.Geometry.Position(end.Y, end.X)));
+                    polygons.Add(new Tuple<GeoJSON.Net.Geometry.Position, GeoJSON.Net.Geometry.Position>(new GeoJSON.Net.Geometry.Position(origin.X, origin.Y), new GeoJSON.Net.Geometry.Position(end.X, end.Y)));
                     break;
                 default:
                     break;
